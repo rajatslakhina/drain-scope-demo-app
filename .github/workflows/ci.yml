@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: iOS Simulator · resolve remote package + build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode and Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # Proves the pinned remote package genuinely resolves from GitHub rather
+      # than from anything cached in this repo. This is the step that would fail
+      # if the library tag were missing, moved, or unreadable.
+      - name: Resolve package dependencies
+        run: xcodebuild -resolvePackageDependencies -project Demo.xcodeproj -scheme Demo
+
+      - name: Show resolved version
+        run: |
+          RESOLVED=Demo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          if [ -f "$RESOLVED" ]; then cat "$RESOLVED"; else echo "no Package.resolved emitted"; fi
+
+      # `generic/platform=iOS Simulator` on purpose: a named device ties the job
+      # to whichever simulator runtimes happen to be installed on that day's
+      # runner image, which is not guaranteed. A compile check needs no device.
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild build \
+            -project Demo.xcodeproj \
+            -scheme Demo \
+            -destination 'generic/platform=iOS Simulator' \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
