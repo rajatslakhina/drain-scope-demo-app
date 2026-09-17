@@ -128,7 +128,29 @@ requirement to `exactVersion`.
 
 ### Continuous integration
 
-<!-- CI-PENDING -->
+[![CI](https://github.com/rajatslakhina/drain-scope-demo-app/actions/workflows/ci.yml/badge.svg)](https://github.com/rajatslakhina/drain-scope-demo-app/actions/workflows/ci.yml)
+
+One job on every push, on `macos-15` — the
+[Actions tab](https://github.com/rajatslakhina/drain-scope-demo-app/actions) is the
+live answer:
+
+1. `xcodebuild -resolvePackageDependencies` — proves `drain-scope-kit` genuinely
+   resolves from GitHub at the version this project asks for, rather than from
+   anything vendored or cached in this repo.
+2. `xcodebuild build -scheme Demo -destination 'generic/platform=iOS Simulator'` —
+   compiles the app against it.
+
+`generic/platform=iOS Simulator` rather than a named device is deliberate. Pinning
+to `name=iPhone 16,OS=latest` ties the job to whichever simulator *runtimes* happen
+to be installed on that day's runner image, and they are not guaranteed; a
+compile-only check needs no device to exist.
+
+**Both steps passed on the commit that completed this repo's initial push.** Be
+precise about what that establishes: the remote package resolves, and this app
+compiles for an iOS Simulator. It does not establish that the app launches,
+renders, or survives a tap — no Simulator was booted by that job or by anything
+else. That gap is the one described under **Screenshots** above, and it is the only
+thing standing between this repo and a complete verification story.
 
 ## License
 
